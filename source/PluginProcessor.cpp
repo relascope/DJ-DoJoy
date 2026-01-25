@@ -6,9 +6,10 @@ PluginProcessor::PluginProcessor()
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                       .withInput  ("Input",     juce::AudioChannelSet::stereo(), true)
                       #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+                       .withOutput ("Output",    juce::AudioChannelSet::stereo(), true)
+                       .withInput  ("Sidechain", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
 {
@@ -114,6 +115,17 @@ bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
    #endif
+
+    // Sidechain must be mono or stereo (or disabled)
+    if (layouts.inputBuses.size() > 1)
+    {
+        const auto& sidechain = layouts.inputBuses.getReference (1);
+
+        if (sidechain != juce::AudioChannelSet::mono()
+         && sidechain != juce::AudioChannelSet::stereo()
+         && ! sidechain.isDisabled())
+            return false;
+    }
 
     return true;
   #endif

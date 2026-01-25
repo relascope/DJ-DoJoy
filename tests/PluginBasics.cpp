@@ -15,7 +15,15 @@ TEST_CASE ("Plugin instance", "[instance]")
     SECTION ("name")
     {
         CHECK_THAT (testPlugin.getName().toStdString(),
-            Catch::Matchers::Equals ("Pamplejuce Demo"));
+            Catch::Matchers::Equals ("DJ-DoJoy"));
+    }
+
+    SECTION ("Sidechain bus")
+    {
+        auto* bus = testPlugin.getBus (true, 1);
+        REQUIRE (bus != nullptr);
+        CHECK (bus->getName() == "Sidechain");
+        CHECK (bus->getDefaultLayout() == juce::AudioChannelSet::stereo());
     }
 }
 
