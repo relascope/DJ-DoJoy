@@ -21,5 +21,9 @@ private:
     PluginProcessor& processorRef;
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton { "Inspect the UI" };
+
+    juce::Slider crossfader;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> crossfaderAttachment;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

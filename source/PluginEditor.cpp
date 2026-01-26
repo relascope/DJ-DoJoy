@@ -3,8 +3,6 @@
 PluginEditor::PluginEditor (PluginProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
-    juce::ignoreUnused (processorRef);
-
     addAndMakeVisible (inspectButton);
 
     // this chunk of code instantiates and opens the melatonin inspector
@@ -17,6 +15,12 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
         inspector->setVisible (true);
     };
+
+    crossfader.setSliderStyle (juce::Slider::LinearHorizontal);
+    crossfader.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    addAndMakeVisible (crossfader);
+
+    crossfaderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, "crossfade", crossfader);
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -43,6 +47,8 @@ void PluginEditor::resized()
 {
     // layout the positions of your child components here
     auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
+    inspectButton.setBounds (area.removeFromBottom (50).withSizeKeepingCentre (100, 30));
+
+    area.removeFromTop (150); // space for the text in paint()
+    crossfader.setBounds (area.withSizeKeepingCentre (200, 50));
 }

@@ -11,7 +11,8 @@ PluginProcessor::PluginProcessor()
                        .withOutput ("Output",    juce::AudioChannelSet::stereo(), true)
                        .withInput  ("Sidechain", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+       apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
 }
 
@@ -84,6 +85,18 @@ void PluginProcessor::changeProgramName (int index, const juce::String& newName)
     juce::ignoreUnused (index, newName);
 }
 
+juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "crossfade", 1 },
+                                                            "Crossfade",
+                                                            juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+                                                            0.5f));
+
+    return layout;
+}
+
 //==============================================================================
 void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
@@ -140,26 +153,38 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    auto mainInput = getBusBuffer (buffer, true, 0);
+    auto sidechainInput = getBusBuffer (buffer, true, 1);
+
+    float crossfadeValue = *apvts.getRawParameterValue ("crossfade");
+
+    float mainGain = std::cos (crossfadeValue * juce::MathConstants<float>::halfPi);
+    float sidechainGain = std::sin (crossfadeValue * juce::MathConstants<float>::halfPi);
+
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
-        juce::ignoreUnused (channelData);
-        // ..do something to the data...
+        auto* out = buffer.getWritePointer (channel);
+        auto* main = mainInput.getReadPointer (juce::jmin (channel, mainInput.getNumChannels() - 1));
+
+        if (sidechainInput.getNumChannels() > 0)
+        {
+            auto* side = sidechainInput.getReadPointer (juce::jmin (channel, sidechainInput.getNumChannels() - 1));
+
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                out[sample] = main[sample] * mainGain + side[sample] * sidechainGain;
+            }
+        }
+        else
+        {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            {
+                out[sample] = main[sample] * mainGain;
+            }
+        }
     }
 }
 
@@ -177,17 +202,18 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
 //==============================================================================
 void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    juce::ignoreUnused (destData);
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    juce::ignoreUnused (data, sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState != nullptr)
+        if (xmlState->hasTagName (apvts.state.getType()))
+            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 //==============================================================================
