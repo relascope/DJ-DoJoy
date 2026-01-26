@@ -134,11 +134,23 @@ bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
     {
         const auto& sidechain = layouts.inputBuses.getReference (1);
 
+        // For AU, we might need to be more permissive or strictly match expectations
         if (sidechain != juce::AudioChannelSet::mono()
          && sidechain != juce::AudioChannelSet::stereo()
          && ! sidechain.isDisabled())
             return false;
     }
+
+    // Logic Pro / AU specific: Some versions expect the sidechain to be able to match the main input
+    // and if we are too strict, it might not show up.
+    // Also, ensure we don't return false for layouts Logic Pro likes to test.
+    
+    // Explicitly support AU's common sidechain configurations
+    #if JucePlugin_Build_AU
+    if (layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo() 
+     && (layouts.inputBuses.size() > 1 && layouts.inputBuses.getReference(1) == juce::AudioChannelSet::stereo()))
+        return true;
+    #endif
 
     return true;
   #endif
@@ -159,7 +171,29 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     auto mainInput = getBusBuffer (buffer, true, 0);
     auto sidechainInput = getBusBuffer (buffer, true, 1);
 
-    float crossfadeValue = *apvts.getRawParameterValue ("crossfade");
+    // Update levels
+    auto updateLevels = [] (const juce::AudioBuffer<float>& busBuffer, std::atomic<float>& left, std::atomic<float>& right) {
+        if (busBuffer.getNumChannels() > 0)
+        {
+            left.store (busBuffer.getMagnitude (0, 0, busBuffer.getNumSamples()));
+            if (busBuffer.getNumChannels() > 1)
+                right.store (busBuffer.getMagnitude (1, 0, busBuffer.getNumSamples()));
+            else
+                right.store (left.load());
+        }
+        else
+        {
+            left.store (0.0f);
+            right.store (0.0f);
+        }
+    };
+
+    updateLevels (mainInput, mainLevelLeft, mainLevelRight);
+    updateLevels (sidechainInput, sidechainLevelLeft, sidechainLevelRight);
+
+    float crossfadeValue = 0.5f;
+    if (auto* param = apvts.getParameter ("crossfade"))
+        crossfadeValue = param->getValue();
 
     float mainGain = std::cos (crossfadeValue * juce::MathConstants<float>::halfPi);
     float sidechainGain = std::sin (crossfadeValue * juce::MathConstants<float>::halfPi);

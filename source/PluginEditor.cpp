@@ -1,20 +1,9 @@
 #include "PluginEditor.h"
 
 PluginEditor::PluginEditor (PluginProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+    : AudioProcessorEditor (&p), processorRef (p), meterWidget (p)
 {
-    addAndMakeVisible (inspectButton);
-
-    // this chunk of code instantiates and opens the melatonin inspector
-    inspectButton.onClick = [&] {
-        if (!inspector)
-        {
-            inspector = std::make_unique<melatonin::Inspector> (*this);
-            inspector->onClose = [this]() { inspector.reset(); };
-        }
-
-        inspector->setVisible (true);
-    };
+    addAndMakeVisible (meterWidget);
 
     crossfader.setSliderStyle (juce::Slider::LinearHorizontal);
     crossfader.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -35,20 +24,16 @@ void PluginEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    auto area = getLocalBounds();
-    g.setColour (juce::Colours::white);
-    g.setFont (16.0f);
-    auto helloWorld = juce::String ("Hello from ") + PRODUCT_NAME_WITHOUT_VERSION + " v" VERSION + " running in " + CMAKE_BUILD_TYPE;
-    g.drawText (helloWorld, area.removeFromTop (150), juce::Justification::centred, false);
 }
 
 void PluginEditor::resized()
 {
-    // layout the positions of your child components here
-    auto area = getLocalBounds();
-    inspectButton.setBounds (area.removeFromBottom (50).withSizeKeepingCentre (100, 30));
-
-    area.removeFromTop (150); // space for the text in paint()
-    crossfader.setBounds (area.withSizeKeepingCentre (200, 50));
+    auto area = getLocalBounds().reduced (20);
+    
+    // Meter widget at the top
+    meterWidget.setBounds (area.removeFromTop (100));
+    
+    // Crossfader in the remaining area
+    area.removeFromTop (20); // gap
+    crossfader.setBounds (area.removeFromTop (50).withSizeKeepingCentre (200, 50));
 }

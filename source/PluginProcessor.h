@@ -40,7 +40,18 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
 
+    float getMainLevelLeft() const { return mainLevelLeft.load(); }
+    float getMainLevelRight() const { return mainLevelRight.load(); }
+    float getSidechainLevelLeft() const { return sidechainLevelLeft.load(); }
+    float getSidechainLevelRight() const { return sidechainLevelRight.load(); }
+
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    std::atomic<float> mainLevelLeft { 0.0f };
+    std::atomic<float> mainLevelRight { 0.0f };
+    std::atomic<float> sidechainLevelLeft { 0.0f };
+    std::atomic<float> sidechainLevelRight { 0.0f };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
