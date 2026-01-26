@@ -1,3 +1,41 @@
+DJ-DoJoy
+=============
+Standalone or AU/VST3 plugin for...
+- crossfading
+- metering
+
+Inputs
+- 2x stereo
+- 1 via sidechain
+
+Motivation
+----------
+Some basic DJ functionality that is missing in a DAW. 
+
+Most DAWs already provide some functionality for a DJ
+- EQ
+- high-cut, low pass filter
+- multiple sources
+
+For me, I want to work with tools I already know from a DAW, and just have a better experience in YouTube listening...
+
+Setup in Logic Pro (and maybe other DAWs)
+-----------------------------------------
+- Blckhole 64ch or 16ch
+- Aggregate device for Deck A and Deck B (Speaker to 3 and 4)
+- AudioPick for 2 YouTube tabs to Deck A and Deck B
+- Logic Pro Input to BlackHole
+- 2 stereo Tracks with input monitoring (Track Deck B has input 3-4)
+- DJ-DoJoy plugin in Logic on Track Deck A
+- Track Deck B output to Bus X (mute the generated AUX track)
+- DJ-DoJoy sidechain to Bus X
+
+If you remove the output from the Track Deck B, the sidechain won't get a signal. 
+
+
+Built with...
+=============
+
 ![PAMPLEJUCE](assets/images/pamplejuce.png)
 [![](https://github.com/sudara/pamplejuce/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/sudara/pamplejuce/actions)
 
