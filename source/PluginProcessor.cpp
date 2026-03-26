@@ -14,6 +14,7 @@ PluginProcessor::PluginProcessor()
                        ),
        apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
+    silenceController = std::make_unique<SilenceCrossfadeController> (apvts);
 }
 
 PluginProcessor::~PluginProcessor()
@@ -93,6 +94,25 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
                                                             "Crossfade",
                                                             juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
                                                             0.5f));
+
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "autoXFadeEnabled", 1 },
+                                                           "Auto X-Fade on Silence",
+                                                           true));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "silenceThresholdTime", 1 },
+                                                            "Silence Detection (s)",
+                                                            juce::NormalisableRange<float> (0.1f, 10.0f, 0.1f),
+                                                            2.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "autoXFadeDuration", 1 },
+                                                            "X-Fade Duration (s)",
+                                                            juce::NormalisableRange<float> (0.1f, 10.0f, 0.1f),
+                                                            2.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "silenceThreshold", 1 },
+                                                            "Silence Threshold (dB)",
+                                                            juce::NormalisableRange<float> (-100.0f, -20.0f, 1.0f),
+                                                            -60.0f));
 
     return layout;
 }
@@ -190,6 +210,13 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     updateLevels (mainInput, mainLevelLeft, mainLevelRight);
     updateLevels (sidechainInput, sidechainLevelLeft, sidechainLevelRight);
+
+    if (silenceController != nullptr)
+    {
+        float mainMag = std::max (mainLevelLeft.load(), mainLevelRight.load());
+        float sideMag = std::max (sidechainLevelLeft.load(), sidechainLevelRight.load());
+        silenceController->update (mainMag, sideMag, getSampleRate(), buffer.getNumSamples());
+    }
 
     float crossfadeValue = 0.5f;
     if (auto* param = apvts.getParameter ("crossfade"))

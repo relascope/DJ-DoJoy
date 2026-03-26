@@ -90,6 +90,48 @@ TEST_CASE ("Plugin instance", "[instance]")
         // Result = 1.0 * 0.7071 + 1.0 * 0.7071 = 1.4142
         CHECK (fullBuffer.getSample (0, 0) == Catch::Approx (1.41421356f));
     }
+
+    SECTION ("Auto-XFade on Silence")
+    {
+        testPlugin.prepareToPlay (44100.0, 512);
+        juce::MidiBuffer midi;
+
+        // Enable auto-xfade
+        testPlugin.apvts.getParameter ("autoXFadeEnabled")->setValueNotifyingHost (1.0f);
+        // Set silence detection to 0.1s
+        testPlugin.apvts.getParameter ("silenceThresholdTime")->setValueNotifyingHost (0.1f / 10.0f); // 0.1s in range 0.1 to 10.0
+        // Set crossfade duration to 0.1s
+        testPlugin.apvts.getParameter ("autoXFadeDuration")->setValueNotifyingHost (0.1f / 10.0f);
+        // Set threshold to -20dB (high for easy testing)
+        testPlugin.apvts.getParameter ("silenceThreshold")->setValueNotifyingHost ((-20.0f + 100.0f) / 80.0f);
+
+        // Start at 0.0 (Main)
+        testPlugin.apvts.getParameter ("crossfade")->setValueNotifyingHost (0.0f);
+
+        // Process silence for 0.15s (should trigger)
+        int numBlocks = (int) (0.15 * 44100.0 / 512.0) + 1;
+        juce::AudioBuffer<float> buffer (4, 512);
+        buffer.clear();
+
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Should be automating now. Wait 0.2s more for automation to complete.
+        numBlocks = (int) (0.2 * 44100.0 / 512.0) + 1;
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Target should be 1.0 (Sidechain)
+        CHECK (testPlugin.apvts.getParameter ("crossfade")->getValue() == Catch::Approx (1.0f));
+
+        // Test bi-directional: silent sidechain now.
+        // Wait 0.2s
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Target should be 0.0 (Main)
+        CHECK (testPlugin.apvts.getParameter ("crossfade")->getValue() == Catch::Approx (0.0f));
+    }
 }
 
 

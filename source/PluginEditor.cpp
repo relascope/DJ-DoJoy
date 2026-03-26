@@ -1,19 +1,25 @@
 #include "PluginEditor.h"
 
 PluginEditor::PluginEditor (PluginProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p), meterWidget (p)
+    : AudioProcessorEditor (&p), processorRef (p), meterWidget (p), autoXFadeWidget (p.apvts)
 {
     addAndMakeVisible (meterWidget);
+    addAndMakeVisible (autoXFadeWidget);
 
     crossfader.setSliderStyle (juce::Slider::LinearHorizontal);
     crossfader.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible (crossfader);
 
+    addAndMakeVisible (crossfaderLabel);
+    crossfaderLabel.setText ("CROSSFADER", juce::dontSendNotification);
+    crossfaderLabel.setJustificationType (juce::Justification::centred);
+    crossfaderLabel.setFont (juce::FontOptions (14.0f));
+
     crossfaderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, "crossfade", crossfader);
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (450, 450);
 }
 
 PluginEditor::~PluginEditor()
@@ -31,9 +37,16 @@ void PluginEditor::resized()
     auto area = getLocalBounds().reduced (20);
     
     // Meter widget at the top
-    meterWidget.setBounds (area.removeFromTop (100));
+    meterWidget.setBounds (area.removeFromTop (120));
     
-    // Crossfader in the remaining area
     area.removeFromTop (20); // gap
-    crossfader.setBounds (area.removeFromTop (50).withSizeKeepingCentre (200, 50));
+
+    // Auto X-Fade section
+    autoXFadeWidget.setBounds (area.removeFromTop (200).withSizeKeepingCentre (350, 200));
+
+    area.removeFromTop (20); // gap
+
+    // Crossfader section
+    crossfaderLabel.setBounds (area.removeFromTop (25));
+    crossfader.setBounds (area.removeFromTop (40).withSizeKeepingCentre (300, 40));
 }

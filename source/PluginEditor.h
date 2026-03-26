@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "BinaryData.h"
 #include "MeterWidget.h"
+#include "AutoXFadeWidget.h"
 
 //==============================================================================
 class PluginEditor : public juce::AudioProcessorEditor
@@ -21,7 +22,9 @@ private:
     PluginProcessor& processorRef;
 
     MeterWidget meterWidget;
+    AutoXFadeWidget autoXFadeWidget;
     juce::Slider crossfader;
+    juce::Label crossfaderLabel;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> crossfaderAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)

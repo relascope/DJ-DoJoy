@@ -6,6 +6,8 @@
 #include "ipps.h"
 #endif
 
+#include "SilenceCrossfadeController.h"
+
 class PluginProcessor : public juce::AudioProcessor
 {
 public:
@@ -46,6 +48,8 @@ public:
     float getSidechainLevelRight() const { return sidechainLevelRight.load(); }
 
 private:
+    std::unique_ptr<SilenceCrossfadeController> silenceController;
+
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     std::atomic<float> mainLevelLeft { 0.0f };
