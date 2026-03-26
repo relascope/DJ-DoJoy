@@ -42,14 +42,23 @@ public:
         // 0.0 is Main 100%, 1.0 is Sidechain 100%
         bool monitoringMain = currentPos < 0.5f;
         float activeLevel = monitoringMain ? mainLevel : sidechainLevel;
+        float targetLevel = monitoringMain ? sidechainLevel : mainLevel;
         float threshold = juce::Decibels::decibelsToGain (thresholdParam->get());
 
         if (activeLevel < threshold)
         {
-            silenceTimer += deltaTime;
-            if (silenceTimer >= silenceTimeParam->get())
+            // Only trigger if the side we would switch to is NOT silent
+            if (targetLevel >= threshold)
             {
-                startAutomation (currentPos);
+                silenceTimer += deltaTime;
+                if (silenceTimer >= silenceTimeParam->get())
+                {
+                    startAutomation (currentPos);
+                }
+            }
+            else
+            {
+                silenceTimer = 0.0f; // Reset if the target is also silent
             }
         }
         else

@@ -108,11 +108,24 @@ TEST_CASE ("Plugin instance", "[instance]")
         // Start at 0.0 (Main)
         testPlugin.apvts.getParameter ("crossfade")->setValueNotifyingHost (0.0f);
 
-        // Process silence for 0.15s (should trigger)
+        // Process silence for 0.15s (should NOT trigger because Sidechain is also silent)
         int numBlocks = (int) (0.15 * 44100.0 / 512.0) + 1;
         juce::AudioBuffer<float> buffer (4, 512);
         buffer.clear();
 
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Should still be at 0.0
+        CHECK (testPlugin.apvts.getParameter ("crossfade")->getValue() == Catch::Approx (0.0f));
+
+        // Now give Sidechain some signal
+        for (int i = 0; i < 512; ++i) {
+            buffer.setSample (2, i, 1.0f); // Sidechain Left
+            buffer.setSample (3, i, 1.0f); // Sidechain Right
+        }
+
+        // Process another 0.15s (should trigger)
         for (int i = 0; i < numBlocks; ++i)
             testPlugin.processBlock (buffer, midi);
 
@@ -124,8 +137,31 @@ TEST_CASE ("Plugin instance", "[instance]")
         // Target should be 1.0 (Sidechain)
         CHECK (testPlugin.apvts.getParameter ("crossfade")->getValue() == Catch::Approx (1.0f));
 
-        // Test bi-directional: silent sidechain now.
-        // Wait 0.2s
+        // --- NEW TEST: Both sides silent ---
+        // Sidechain is currently at 1.0 (active), but both inputs are silent.
+        // It should NOT switch back to Main because Main is also silent.
+        
+        // Wait another 0.5s with both silent
+        numBlocks = (int) (0.5 * 44100.0 / 512.0) + 1;
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Should still be at 1.0
+        CHECK (testPlugin.apvts.getParameter ("crossfade")->getValue() == Catch::Approx (1.0f));
+
+        // Now give Main some signal
+        for (int i = 0; i < 512; ++i) {
+            buffer.setSample (0, i, 1.0f); // Main Left
+            buffer.setSample (1, i, 1.0f); // Main Right
+        }
+
+        // Process another 0.15s (should trigger back to Main)
+        numBlocks = (int) (0.15 * 44100.0 / 512.0) + 1;
+        for (int i = 0; i < numBlocks; ++i)
+            testPlugin.processBlock (buffer, midi);
+
+        // Wait for automation
+        numBlocks = (int) (0.2 * 44100.0 / 512.0) + 1;
         for (int i = 0; i < numBlocks; ++i)
             testPlugin.processBlock (buffer, midi);
 
