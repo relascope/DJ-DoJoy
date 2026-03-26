@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Parameters.h"
 
 //==============================================================================
 PluginProcessor::PluginProcessor()
@@ -90,26 +91,26 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "crossfade", 1 },
+    layout.add (std::make_unique<juce::AudioParameterFloat> (Parameters::crossfade,
                                                             "Crossfade",
                                                             juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
                                                             0.5f));
 
-    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "autoXFadeEnabled", 1 },
+    layout.add (std::make_unique<juce::AudioParameterBool> (Parameters::autoXFadeEnabled,
                                                            "Auto X-Fade on Silence",
                                                            true));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "silenceThresholdTime", 1 },
+    layout.add (std::make_unique<juce::AudioParameterFloat> (Parameters::silenceThresholdTime,
                                                             "Silence Detection (s)",
                                                             juce::NormalisableRange<float> (0.1f, 10.0f, 0.1f),
                                                             2.0f));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "autoXFadeDuration", 1 },
+    layout.add (std::make_unique<juce::AudioParameterFloat> (Parameters::autoXFadeDuration,
                                                             "X-Fade Duration (s)",
                                                             juce::NormalisableRange<float> (0.1f, 10.0f, 0.1f),
                                                             2.0f));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "silenceThreshold", 1 },
+    layout.add (std::make_unique<juce::AudioParameterFloat> (Parameters::silenceThreshold,
                                                             "Silence Threshold (dB)",
                                                             juce::NormalisableRange<float> (-100.0f, -20.0f, 1.0f),
                                                             -60.0f));
@@ -219,7 +220,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
     float crossfadeValue = 0.5f;
-    if (auto* param = apvts.getParameter ("crossfade"))
+    if (auto* param = apvts.getParameter (Parameters::crossfade.getParamID()))
         crossfadeValue = param->getValue();
 
     float mainGain = std::cos (crossfadeValue * juce::MathConstants<float>::halfPi);

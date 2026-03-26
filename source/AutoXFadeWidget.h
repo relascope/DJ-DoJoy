@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "Parameters.h"
 
 class AutoXFadeWidget : public juce::Component
 {
@@ -11,11 +12,11 @@ public:
     {
         addAndMakeVisible (enabledButton);
         enabledButton.setButtonText ("Auto Switch");
-        enabledAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "autoXFadeEnabled", enabledButton);
+        enabledAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, Parameters::autoXFadeEnabled.getParamID(), enabledButton);
 
-        setupSlider (silenceTimeSlider, silenceTimeLabel, "Silence (s)", "silenceThresholdTime");
-        setupSlider (xfadeTimeSlider, xfadeTimeLabel, "Fade (s)", "autoXFadeDuration");
-        setupSlider (thresholdSlider, thresholdLabel, "Threshold (dB)", "silenceThreshold");
+        setupSlider (silenceTimeSlider, silenceTimeLabel, "Silence (s)", Parameters::silenceThresholdTime.getParamID());
+        setupSlider (xfadeTimeSlider, xfadeTimeLabel, "Fade (s)", Parameters::autoXFadeDuration.getParamID());
+        setupSlider (thresholdSlider, thresholdLabel, "Threshold (dB)", Parameters::silenceThreshold.getParamID());
     }
 
     void paint (juce::Graphics& g) override

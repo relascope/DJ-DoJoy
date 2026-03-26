@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "Parameters.h"
 
 PluginEditor::PluginEditor (PluginProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p), meterWidget (p), autoXFadeWidget (p.apvts)
@@ -15,7 +16,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     crossfaderLabel.setJustificationType (juce::Justification::centred);
     crossfaderLabel.setFont (juce::FontOptions (14.0f));
 
-    crossfaderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, "crossfade", crossfader);
+    crossfaderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, Parameters::crossfade.getParamID(), crossfader);
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.

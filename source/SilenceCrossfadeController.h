@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "Parameters.h"
 
 class SilenceCrossfadeController
 {
@@ -8,11 +9,11 @@ public:
     SilenceCrossfadeController (juce::AudioProcessorValueTreeState& vts)
         : apvts (vts)
     {
-        crossfadeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter ("crossfade"));
-        enabledParam = dynamic_cast<juce::AudioParameterBool*> (apvts.getParameter ("autoXFadeEnabled"));
-        silenceTimeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter ("silenceThresholdTime"));
-        xfadeTimeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter ("autoXFadeDuration"));
-        thresholdParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter ("silenceThreshold"));
+        crossfadeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter (Parameters::crossfade.getParamID()));
+        enabledParam = dynamic_cast<juce::AudioParameterBool*> (apvts.getParameter (Parameters::autoXFadeEnabled.getParamID()));
+        silenceTimeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter (Parameters::silenceThresholdTime.getParamID()));
+        xfadeTimeParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter (Parameters::autoXFadeDuration.getParamID()));
+        thresholdParam = dynamic_cast<juce::AudioParameterFloat*> (apvts.getParameter (Parameters::silenceThreshold.getParamID()));
     }
 
     void update (float mainLevel, float sidechainLevel, double sampleRate, int numSamples)
