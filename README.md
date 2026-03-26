@@ -3,6 +3,8 @@ DJ-DoJoy
 Standalone or AU/VST3 plugin for...
 - crossfading
 - metering
+- auto-x-fade on silence
+
 
 Inputs
 - 2x stereo

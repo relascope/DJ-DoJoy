@@ -26,7 +26,7 @@ public:
         
         g.setColour (getLookAndFeel().findColour (juce::Label::textColourId));
         g.setFont (juce::FontOptions (12.0f));
-        g.drawText ("AUTO CROSSFADE", getLocalBounds().removeFromTop (20), juce::Justification::centred);
+        g.drawText ("Auto X-Fade on Silence", getLocalBounds().removeFromTop (20), juce::Justification::centred);
     }
 
     void resized() override
